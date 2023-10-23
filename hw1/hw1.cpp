@@ -29,6 +29,7 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM) {
   BasicBlock *entry_block;
   BasicBlock *for_body_block; 
   BasicBlock *for_cond_block; 
+  BasicBlock *for_inc_block;
   for (BasicBlock &BB : F)
   {
     if(BB.getName()=="entry")
@@ -48,7 +49,10 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM) {
           {
               for_cond_block=BBinLoop;
           }
-
+          else if(BBinLoop->getName()=="for.inc")
+          {
+              for_inc_block=BBinLoop;
+          }
       }
   }
 
@@ -60,18 +64,6 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM) {
   {
     if(auto *II = dyn_cast<StoreInst>(&I))
     {
-      // if(II->getOperand(1)->getOperand(0))
-      // {
-      //   if (ConstantInt* CI = dyn_cast<ConstantInt>(II->getOperand(0))) 
-      //   {
-      //     if (CI->getBitWidth() <= 32) 
-      //     {
-      //       int iteration_end = CI->getSExtValue();
-      //       errs()<<"iteration_end :"<<iteration_end<<'\n';
-      //     }
-      //   }   
-      // }
-      //errs()<<*II->getOperand(1)<<"\n";
       std::string i= "  %i = alloca i32, align 4";  
       std::string str;
       raw_string_ostream stream(str);
@@ -105,7 +97,21 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM) {
       } 
     }
   }
-        
+  for (Instruction &I : *for_inc_block)
+  {
+    if(auto *II = dyn_cast<AddOperator>(&I))
+    {
+      if (ConstantInt* TI = dyn_cast<ConstantInt>(II->getOperand(1))) 
+      {
+        if (TI->getBitWidth() <= 32) 
+        {
+          int iteration_stripe = TI->getSExtValue();
+          errs()<<"iteration_stripe :"<<iteration_stripe<<'\n';
+        }
+      } 
+      
+    }
+  }
   
   return PreservedAnalyses::all();
 }
