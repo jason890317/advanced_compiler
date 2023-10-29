@@ -16,6 +16,7 @@ hw1.so: hw1.cpp
 
 test2.ll: test2.c
 	$(CXX) $(IRFLAGS) -o $@ $<
+	$(OPT) -S -passes=mem2reg,loop-rotate,loop-simplify $@ -o $@
 
 run: test2.ll hw1.so
 	$(OPT) -disable-output -load-pass-plugin=./hw1.so -passes=hw1 $<
