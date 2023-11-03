@@ -64,8 +64,6 @@ void get_equ(int* a, int* c, std::string equ)
       *a=stoi(equ.substr(2,equ.length()));
       *c=0;
     }
-    
-    // errs()<<*a<<*c<<"\n";
   }
 }
 
@@ -102,10 +100,7 @@ void get_b(double &l_x,double &u_x, double &l_y, double &u_y,double &L,double &U
     sort(ar,ar+4);
     L=ceil(ar[1]);
     U=floor(ar[2]);
-    //errs()<<ar[0]<<" "<<ar[1]<<" "<<ar[2]<<" "<<ar[3];
   }
-  //errs()<<l_x<<" "<<u_x<<" "<<l_y<<" "<<u_y<<"\n";
-  
 }
 std::vector<int*> diophantine(int low_b,int up_b,std::string equ_a, std::string equ_b)
 {
@@ -117,21 +112,15 @@ std::vector<int*> diophantine(int low_b,int up_b,std::string equ_a, std::string 
   get_equ(&a,&c_a,equ_a);
   get_equ(&b,&c_b,equ_b);
   c=-1*(c_a-c_b);
-  // errs()<<a<<" "<<c_a<<"\n";
-  // errs()<<b<<" "<<c_b<<"\n";
-  // errs()<<c<<"\n";
+ 
   b=b*-1;
   g=xGCD(a,b,u,v);
-  // errs()<<a<<" "<<c_a<<"\n";
-  // errs()<<b<<" "<<c_b<<"\n";
-  //errs()<<u<<" "<<v<<"\n";
+  
   int x[2],y[2];
   x[0]=u*c/g;
   x[1]=b/g;
   y[0]=v*c/g;
   y[1]=(-1)*a/g;
-  // errs()<<x[0]<<" "<<x[1]<<"\n";
-  // errs()<<y[0]<<" "<<y[1]<<"\n";
   
   double L=low_b,U=up_b;
 
@@ -150,28 +139,14 @@ std::vector<int*> diophantine(int low_b,int up_b,std::string equ_a, std::string 
   l_y=(L-y[0])/y[1];
   u_y=(U-y[0])/y[1];
 
-  // errs()<<l_x<<" "<<u_x<<"\n";
-  // errs()<<l_y<<" "<<u_y<<"\n";
-
   get_b(l_x,u_x,l_y,u_y,L,U);
-  //errs()<<L<<" "<<U;
   b=b*-1;
   for(int i=L;i<=U;i++)
   {
     int* vec = new int[2];
     vec[0]=x[0]+x[1]*i;
     vec[1]=y[0]+y[1]*i;
-    //errs()<<vec[0]<<" "<<vec[1]<<"\n";
-    result.push_back(vec);
-    
-    // errs()<<a<<" "<<c_a<<"\n";
-    // errs()<<b<<" "<<c_b<<"\n";
-    // if(a*vec[0]+c_a == b*vec[1]+c_b)
-    // {
-    //   errs()<<"vec[0]: "<<vec[0]<<" "<<a*vec[0]+c_a<<"\n";
-    //   errs()<<"vec[1]: "<<vec[1]<<" "<<b*vec[1]+c_b<<"\n\n";
-    // }
-    
+    result.push_back(vec);  
   }
   return result;
 }
@@ -215,17 +190,14 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     if(ConstantInt *TI = dyn_cast<ConstantInt>(&L->getBounds(SE)->getInitialIVValue()))
     {
       iteration_begin = TI->getSExtValue();
-      //errs()<<iteration_begin<<"\n";
     }
     if(ConstantInt *TI = dyn_cast<ConstantInt>(&L->getBounds(SE)->getFinalIVValue()))
     {
       iteration_end = TI->getSExtValue();
-      //errs()<<iteration_end<<"\n";
     }
     if(ConstantInt *TI = dyn_cast<ConstantInt>(L->getBounds(SE)->getStepValue()))
     {
       iteration_stripe = TI->getSExtValue();
-      //errs()<<iteration_stripe<<"\n";
     }
   }
   for (const auto &L : LI) {
@@ -243,8 +215,6 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       }
   }
 
- 
-  
   //seperate S1,S2,...
   
   std::vector<S> s;
@@ -265,85 +235,62 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     
     if(get_str(I->getOpcodeName())=="getelementptr" && s[i].r_name=="" )
     {
-      //errs()<<*I->getOperand(0)<<"\n";
       s[i].r_name=get_str(I->getOperand(0))[3];
     }
     else if(get_str(I->getOpcodeName())=="getelementptr" && s[i].r_name!="")
     {
-      //errs()<<*I->getOperand(0)<<"\n";
       s[i].l_name=get_str(I->getOperand(0))[3];
     }
     else if(s[i].r_name!="" && s[i].l_name!="" )
     {
-      //errs()<<s[i].l_name<<" "<<s[i].r_name<<"\n";
       ++i;
     }
   }
   i=0;
   std::string equ="i";
-  std::string point="i";
   for(BasicBlock::iterator I = for_body_block->begin(), be = for_body_block->end(); I != be; I++)
   {
-    
     BasicBlock::iterator cur=I;
-    //errs()<<*I<<"\n";
-    //errs()<<get_str(I->getOperand(0)).substr(3,1)<<"\n";
-    if(get_str(I->getOperand(0)).substr(3,1)== point || get_str(I->getOpcodeName())== "mul")
+    if(get_str(I->getOperand(0)).substr(3,1)== equ || get_str(I->getOpcodeName())== "mul")
     {
-      //cyr++;
-      //errs()<<*cur<<"\n";
-      //Instruction &rI=*cur;
       while(get_str(cur->getOpcodeName())!="getelementptr" && i<S_num)
       {
           std::string opt=get_str(cur->getOpcodeName());
-          //errs()<<opt<<"\n";
           if(opt=="mul")
           {
-            // errs()<<"mul"<<"\n";
             std::string st=&get_str(cur->getOperand(0))[4];
             equ+="*"+st;
           }
           else if(opt=="add")
           {
-            // errs()<<"add"<<"\n";
             std::string st=&get_str(cur->getOperand(1))[4];
             equ+="+"+st;
           }
           else if(opt=="sub")
           {
-            // errs()<<"sub"<<"\n";
             std::string st=&get_str(cur->getOperand(1))[4];
             equ+="-"+st;
           }
           else if(opt=="div")
           {
-            // errs()<<"div"<<"\n";
             std::string st=&get_str(cur->getOperand(0))[4];
             equ+="/"+st;
           }
           cur++;
       }
-      //errs()<<i<<" "<<equ<<"\n";
       if(s[i].r_idx=="" && s[i].l_idx=="")
       {
         s[i].r_idx=equ;
-        //errs()<<i<<" "<<s[i].r_idx<<"\n";
       }
       else if(s[i].r_idx!="" && s[i].l_idx=="")
       {
         s[i].l_idx=equ;
-        //errs()<<i<<" "<<s[i].l_idx<<"\n";
         i++;
       }
       equ="i";  
     }
   }
-  
-  // for(auto i:s)
-  // {
-  //   errs()<<i.l_name<<":"<<i.l_idx<<"  ";
-  //   errs()<<i.r_name<<":"<<i.r_idx<<"\n";
-  // }
+    
   std::string flow_dependence="====Flow Dependency====\n";
   std::string anti_dependence="====Anti-Dependency====\n";
   std::string output_dependence="====Output Dependency====\n";
@@ -356,12 +303,10 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     {
       if(s[i].l_name==s[j].r_name)
       {
-        //errs()<<s[i].l_name<<" "<<s[j].r_name<<"\n";
         result=diophantine(iteration_begin,iteration_end-1,s[i].l_idx,s[j].r_idx);
         std::sort(result.begin(),result.end(),greater);
         for(auto item=result.begin();item!=result.end();item++)
         {
-          //errs()<<(*item)[0]<<" "<<(*item)[1]<<"\n";
           if((*item)[0]-(*item)[1]<=0)
           {
             flow_dependence+="(i="+std::to_string((*item)[0])+",i="+std::to_string((*item)[1])+")\n";
@@ -384,12 +329,10 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     {
       if(s[i].r_name==s[j].l_name)
       {
-        //errs()<<s[i].l_name<<" "<<s[j].r_name<<"\n";
         result=diophantine(iteration_begin,iteration_end-1,s[i].r_idx,s[j].l_idx);
         std::sort(result.begin(),result.end(),greater);
         for(auto item=result.begin();item!=result.end();item++)
         {
-          //errs()<<(*item)[0]<<" "<<(*item)[1]<<"\n";
           if((*item)[0]-(*item)[1]>0)
           {
             flow_dependence+="(i="+std::to_string((*item)[0])+",i="+std::to_string((*item)[1])+")\n";
@@ -412,12 +355,10 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     {
       if(s[i].l_name==s[j].l_name)
       {
-        //errs()<<s[i].l_name<<" "<<s[j].r_name<<"\n";
         result=diophantine(iteration_begin,iteration_end-1,s[i].l_idx,s[j].l_idx);
         std::sort(result.begin(),result.end(),greater);
         for(auto item=result.begin();item!=result.end();item++)
         {
-          //errs()<<(*item)[0]<<" "<<(*item)[1]<<"\n";
           if((*item)[0]-(*item)[1]<=0)
           {
             output_dependence+="(i="+std::to_string((*item)[0])+",i="+std::to_string((*item)[1])+")\n";
