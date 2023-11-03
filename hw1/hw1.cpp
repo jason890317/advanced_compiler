@@ -25,75 +25,216 @@ std::string get_str(const char *val)
   //errs()<<str<<"\n";
   return str;
 }
-int gcd(int a, int b) 
-{ 
-    // Everything divides 0 
-    if (a == 0) 
-        return b; 
-    if (b == 0) 
-        return a; 
-  
-    // base case 
-    if (a == b) 
-        return a; 
-  
-    // a is greater 
-    if (a > b) 
-        return gcd(a - b, b); 
-    return gcd(a, b - a); 
-} 
-void diophantine(int low_b,int up_b,std::string equ_a, std::string equ_b)
+
+void get_equ(int* a, int* c, std::string equ)
 {
-  int u,v,g,a,b,c;
-  if(equ_a=="i")
+  if(equ=="i")
   {
-    a=1;
+    *a=1;
+    *c=0;
+    // errs()<<*a<<*c<<"\n";
   }
-  
-  if(equ_b=="i")
+  else if(equ[1]=='+')
   {
-    b=1;
+    *a=1;
+    *c=stoi(equ.substr(2,equ.length()));
   }
+  else if(equ[1]=='-')
+  {
+    *a=1;
+    *c=-1*stoi(equ.substr(2,equ.length()));
+    // errs()<<*a<<*c<<"\n";
+  }
+  else if(equ[1]=='*')
+  {
+    auto f=equ.find("-");
+    auto g=equ.find("+");
+    if(f!=-1)
+    {
+      *a=stoi(equ.substr(2,f));
+      *c=-1*stoi(equ.substr(f+1,equ.length()));
+    }
+    else if(g!=-1)
+    {
+      *a=stoi(equ.substr(2,equ.length()));
+      *c=-1*stoi(equ.substr(g+1,equ.length()));
+    }
+    else if(f==-1 && g==-1)
+    {
+      *a=stoi(equ.substr(2,equ.length()));
+      *c=0;
+    }
+    
+    // errs()<<*a<<*c<<"\n";
+  }
+}
+
+int xGCD(int a, int b, int &x, int &y) {
+    if(b == 0) {
+       x = 1;
+       y = 0;
+       return a;
+    }
+
+    int x1, y1, gcd = xGCD(b, a % b, x1, y1);
+    x = y1;
+    y = x1 - (a / b) * y1;
+    return gcd;
+}
+void get_b(double &l_x,double &u_x, double &l_y, double &u_y,double &L,double &U)
+{
+  double ar[]={l_x,l_y,u_x,u_y};
+  if(l_x>u_x)
+  {
+    std::swap(l_x,u_x);
+  }
+  if(l_y>u_y)
+  {
+    std::swap(l_y,u_y);
+  }
+  if(l_y>u_x || l_x>u_y)
+  {
+    L=0;
+    U=-1;
+  }
+  else
+  {
+    sort(ar,ar+4);
+    L=ceil(ar[1]);
+    U=floor(ar[2]);
+    //errs()<<ar[0]<<" "<<ar[1]<<" "<<ar[2]<<" "<<ar[3];
+  }
+  //errs()<<l_x<<" "<<u_x<<" "<<l_y<<" "<<u_y<<"\n";
   
 }
+std::vector<int*> diophantine(int low_b,int up_b,std::string equ_a, std::string equ_b)
+{
+  int u,v;
+  int a,b,c,c_a,c_b;
+  int g;
+  int t;
+  std::vector<int*> result;
+  get_equ(&a,&c_a,equ_a);
+  get_equ(&b,&c_b,equ_b);
+  c=-1*(c_a-c_b);
+  // errs()<<a<<" "<<c_a<<"\n";
+  // errs()<<b<<" "<<c_b<<"\n";
+  // errs()<<c<<"\n";
+  b=b*-1;
+  g=xGCD(a,b,u,v);
+  // errs()<<a<<" "<<c_a<<"\n";
+  // errs()<<b<<" "<<c_b<<"\n";
+  //errs()<<u<<" "<<v<<"\n";
+  int x[2],y[2];
+  x[0]=u*c/g;
+  x[1]=b/g;
+  y[0]=v*c/g;
+  y[1]=(-1)*a/g;
+  // errs()<<x[0]<<" "<<x[1]<<"\n";
+  // errs()<<y[0]<<" "<<y[1]<<"\n";
+  
+  double L=low_b,U=up_b;
+
+  if(low_b>=up_b)
+  {
+    U=low_b;
+    L=up_b;
+  }
+
+  double l_x,u_x;
+  double l_y,u_y;
+  
+  l_x=(L-x[0])/x[1];
+  u_x=(U-x[0])/x[1];
+
+  l_y=(L-y[0])/y[1];
+  u_y=(U-y[0])/y[1];
+
+  // errs()<<l_x<<" "<<u_x<<"\n";
+  // errs()<<l_y<<" "<<u_y<<"\n";
+
+  get_b(l_x,u_x,l_y,u_y,L,U);
+  //errs()<<L<<" "<<U;
+  b=b*-1;
+  for(int i=L;i<=U;i++)
+  {
+    int* vec = new int[2];
+    vec[0]=x[0]+x[1]*i;
+    vec[1]=y[0]+y[1]*i;
+    //errs()<<vec[0]<<" "<<vec[1]<<"\n";
+    result.push_back(vec);
+    
+    // errs()<<a<<" "<<c_a<<"\n";
+    // errs()<<b<<" "<<c_b<<"\n";
+    // if(a*vec[0]+c_a == b*vec[1]+c_b)
+    // {
+    //   errs()<<"vec[0]: "<<vec[0]<<" "<<a*vec[0]+c_a<<"\n";
+    //   errs()<<"vec[1]: "<<vec[1]<<" "<<b*vec[1]+c_b<<"\n\n";
+    // }
+    
+  }
+  return result;
+}
+bool greater(int* s,int* t)
+{
+  return s[0]<t[0];
+}
+
+
+using ar_name=std::string;
+using idx=std::string;
+struct S
+{
+  ar_name l_name;
+  ar_name r_name;
+  idx l_idx;
+  idx r_idx;
+  S(ar_name l_n, ar_name r_n, idx l_i, idx r_i):l_name(l_n),
+  r_name(r_n),l_idx(l_i),r_idx(r_i){};
+};
+
 PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM) 
 {
-  // auto &LI = FAM.getResult<LoopAnalysis>(F);
-  // llvm::ScalarEvolutionAnalysis SEA;
-  // auto &SE = FAM.getResult<ScalarEvolutionAnalysis>(F);
-  
-  // for (const auto &L : LI) {
-  //   if (auto LB = L->getBounds(SE)) {
-  //     outs() << "Valid loop found" << "\n";
-  //     outs() << LB->getInitialIVValue() << " "
-  //            << LB->getStepInst() << "\n"; 
-  //   } 
-  // }
-  
 
   //get the block of forloop 
   BasicBlock *entry_block;
   BasicBlock *for_body_block; 
-  BasicBlock *for_cond_block; 
   BasicBlock *for_inc_block;
-  for (BasicBlock &BB : F)
+
+  
+  
+  //get the iteration of loop
+
+  auto &LI = FAM.getResult<LoopAnalysis>(F);
+  auto &SE =FAM.getResult<ScalarEvolutionAnalysis>(F);
+  int iteration_begin=0;
+  int iteration_stripe=0;
+  int iteration_end=0;
+  for (const auto &L : LI) 
   {
-    if(BB.getName()=="entry")
+    if(ConstantInt *TI = dyn_cast<ConstantInt>(&L->getBounds(SE)->getInitialIVValue()))
     {
-      entry_block=&BB;
+      iteration_begin = TI->getSExtValue();
+      //errs()<<iteration_begin<<"\n";
+    }
+    if(ConstantInt *TI = dyn_cast<ConstantInt>(&L->getBounds(SE)->getFinalIVValue()))
+    {
+      iteration_end = TI->getSExtValue();
+      //errs()<<iteration_end<<"\n";
+    }
+    if(ConstantInt *TI = dyn_cast<ConstantInt>(L->getBounds(SE)->getStepValue()))
+    {
+      iteration_stripe = TI->getSExtValue();
+      //errs()<<iteration_stripe<<"\n";
     }
   }
-  auto &LI = FAM.getResult<LoopAnalysis>(F);
   for (const auto &L : LI) {
         for (llvm::Loop::block_iterator BB = L->block_begin(); BB != L->block_end(); ++BB) {
           llvm::BasicBlock *BBinLoop = *BB;
           if(BBinLoop->getName()=="for.body")
           {
               for_body_block=BBinLoop;
-          }
-          else if(BBinLoop->getName()=="for.cond")
-          {
-              for_cond_block=BBinLoop;
+              
           }
           else if(BBinLoop->getName()=="for.inc")
           {
@@ -102,75 +243,10 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       }
   }
 
-  //get the iteration of loop
-  int iteration_begin;
-  int iteration_stripe;
-  int iteration_end;
-  for (Instruction &I : *entry_block)
-  {
-    if(auto *II = dyn_cast<StoreInst>(&I))
-    {
-      std::string i= "  %i = alloca i32, align 4";  
-      std::string str;
-      raw_string_ostream stream(str);
-      II->getOperand(1)->print(stream);
-      str = stream.str();
-      if(i.compare(str)==0)
-      {
-        if (ConstantInt* CI = dyn_cast<ConstantInt>(II->getOperand(0))) 
-        {
-          if (CI->getBitWidth() <= 32) 
-          {
-            int iteration_begin = CI->getSExtValue();
-            errs()<<"iteration_begin :"<<iteration_begin<<'\n';
-          }
-        } 
-      }
-      
-    }
-  }
-  for (Instruction &I : *for_cond_block) 
-  { 
-    if(auto *II = dyn_cast<ICmpInst>(&I))
-    {
-      if (ConstantInt* CI = dyn_cast<ConstantInt>(II->getOperand(1))) 
-      {
-        if (CI->getBitWidth() <= 32) 
-        {
-          int iteration_end = CI->getSExtValue();
-          errs()<<"iteration_end :"<<iteration_end<<'\n';
-        }
-      } 
-    }
-  }
-  for (Instruction &I : *for_inc_block)
-  {
-    if(auto *II = dyn_cast<AddOperator>(&I))
-    {
-      if (ConstantInt* TI = dyn_cast<ConstantInt>(II->getOperand(1))) 
-      {
-        if (TI->getBitWidth() <= 32) 
-        {
-          int iteration_stripe = TI->getSExtValue();
-          errs()<<"iteration_stripe :"<<iteration_stripe<<'\n';
-        }
-      } 
-      
-    }
-  }
+ 
   
   //seperate S1,S2,...
-  using ar_name=std::string;
-  using idx=std::string;
-  struct S
-  {
-    ar_name l_name;
-    ar_name r_name;
-    idx l_idx;
-    idx r_idx;
-    S(ar_name l_n, ar_name r_n, idx l_i, idx r_i):l_name(l_n),
-    r_name(r_n),l_idx(l_i),r_idx(r_i){};
-  };
+  
   std::vector<S> s;
   int S_num=0;
   
@@ -190,12 +266,12 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     if(get_str(I->getOpcodeName())=="getelementptr" && s[i].r_name=="" )
     {
       //errs()<<*I->getOperand(0)<<"\n";
-      s[i].r_name=get_str(I->getOperand(0));
+      s[i].r_name=get_str(I->getOperand(0))[3];
     }
     else if(get_str(I->getOpcodeName())=="getelementptr" && s[i].r_name!="")
     {
       //errs()<<*I->getOperand(0)<<"\n";
-      s[i].l_name=get_str(I->getOperand(0));
+      s[i].l_name=get_str(I->getOperand(0))[3];
     }
     else if(s[i].r_name!="" && s[i].l_name!="" )
     {
@@ -205,17 +281,22 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
   }
   i=0;
   std::string equ="i";
+  std::string point="i";
   for(BasicBlock::iterator I = for_body_block->begin(), be = for_body_block->end(); I != be; I++)
   {
     
     BasicBlock::iterator cur=I;
-    if(get_str(I->getOperand(0))=="  %i = alloca i32, align 4")
+    //errs()<<*I<<"\n";
+    //errs()<<get_str(I->getOperand(0)).substr(3,1)<<"\n";
+    if(get_str(I->getOperand(0)).substr(3,1)== point || get_str(I->getOpcodeName())== "mul")
     {
-      cur++;
+      //cyr++;
+      //errs()<<*cur<<"\n";
       //Instruction &rI=*cur;
-      while(get_str(cur->getOpcodeName())!="sext" && i<S_num)
+      while(get_str(cur->getOpcodeName())!="getelementptr" && i<S_num)
       {
           std::string opt=get_str(cur->getOpcodeName());
+          //errs()<<opt<<"\n";
           if(opt=="mul")
           {
             // errs()<<"mul"<<"\n";
@@ -254,11 +335,106 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
         //errs()<<i<<" "<<s[i].l_idx<<"\n";
         i++;
       }
-      equ="i";
+      equ="i";  
     }
   }
   
-  diophantine(0,1,"i*2-12","i+5");
+  // for(auto i:s)
+  // {
+  //   errs()<<i.l_name<<":"<<i.l_idx<<"  ";
+  //   errs()<<i.r_name<<":"<<i.r_idx<<"\n";
+  // }
+  std::string flow_dependence="====Flow Dependency====\n";
+  std::string anti_dependence="====Anti-Dependency====\n";
+  std::string output_dependence="====Output Dependency====\n";
+  std::vector<int*> result;
+
+  //left to right
+  for(int i=0;i<S_num;i++)
+  {
+    for(int j=i;j<S_num && j<i+3;j++)
+    {
+      if(s[i].l_name==s[j].r_name)
+      {
+        //errs()<<s[i].l_name<<" "<<s[j].r_name<<"\n";
+        result=diophantine(iteration_begin,iteration_end-1,s[i].l_idx,s[j].r_idx);
+        std::sort(result.begin(),result.end(),greater);
+        for(auto item=result.begin();item!=result.end();item++)
+        {
+          //errs()<<(*item)[0]<<" "<<(*item)[1]<<"\n";
+          if((*item)[0]-(*item)[1]<=0)
+          {
+            flow_dependence+="(i="+std::to_string((*item)[0])+",i="+std::to_string((*item)[1])+")\n";
+            flow_dependence+=s[i].l_name+":S"+std::to_string(i+1)+" -----> S"+std::to_string(j+1)+"\n";
+
+          }
+          else{ 
+            anti_dependence+="(i="+std::to_string((*item)[1])+",i="+std::to_string((*item)[0])+")\n";
+            anti_dependence+=s[i].l_name+":S"+std::to_string(j+1)+" --A--> S"+std::to_string(i+1)+"\n";
+          }
+        }
+      }
+    }
+  }
+  
+  //right to left
+  for(int i=0;i<S_num;i++)
+  {
+    for(int j=i+1;j<S_num && j<i+3;j++)
+    {
+      if(s[i].r_name==s[j].l_name)
+      {
+        //errs()<<s[i].l_name<<" "<<s[j].r_name<<"\n";
+        result=diophantine(iteration_begin,iteration_end-1,s[i].r_idx,s[j].l_idx);
+        std::sort(result.begin(),result.end(),greater);
+        for(auto item=result.begin();item!=result.end();item++)
+        {
+          //errs()<<(*item)[0]<<" "<<(*item)[1]<<"\n";
+          if((*item)[0]-(*item)[1]>0)
+          {
+            flow_dependence+="(i="+std::to_string((*item)[0])+",i="+std::to_string((*item)[1])+")\n";
+            flow_dependence+=s[i].l_name+":S"+std::to_string(i+1)+" -----> S"+std::to_string(j+1)+"\n";
+
+          }
+          else{ 
+            anti_dependence+="(i="+std::to_string((*item)[1])+",i="+std::to_string((*item)[0])+")\n";
+            anti_dependence+=s[i].l_name+":S"+std::to_string(j+1)+" --A--> S"+std::to_string(i+1)+"\n";
+          }
+        }
+      }
+    }
+  }
+
+  //left to left
+  for(int i=0;i<S_num;i++)
+  {
+    for(int j=i+1;j<S_num && j<i+3;j++)
+    {
+      if(s[i].l_name==s[j].l_name)
+      {
+        //errs()<<s[i].l_name<<" "<<s[j].r_name<<"\n";
+        result=diophantine(iteration_begin,iteration_end-1,s[i].l_idx,s[j].l_idx);
+        std::sort(result.begin(),result.end(),greater);
+        for(auto item=result.begin();item!=result.end();item++)
+        {
+          //errs()<<(*item)[0]<<" "<<(*item)[1]<<"\n";
+          if((*item)[0]-(*item)[1]<=0)
+          {
+            output_dependence+="(i="+std::to_string((*item)[0])+",i="+std::to_string((*item)[1])+")\n";
+            output_dependence+=s[i].l_name+":S"+std::to_string(i+1)+" --O--> S"+std::to_string(j+1)+"\n";
+
+          }
+          else{ 
+            output_dependence+="(i="+std::to_string((*item)[1])+",i="+std::to_string((*item)[0])+")\n";
+            output_dependence+=s[i].l_name+":S"+std::to_string(j+1)+" --O--> S"+std::to_string(i+1)+"\n";
+          }
+        }
+      }
+    }
+  }
+  errs()<<flow_dependence;
+  errs()<<anti_dependence;
+  errs()<<output_dependence;
   return PreservedAnalyses::all();
 }
 

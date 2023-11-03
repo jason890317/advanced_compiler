@@ -1,4 +1,4 @@
-; ModuleID = 'test2.c'
+; ModuleID = 'test2.ll'
 source_filename = "test2.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
@@ -6,58 +6,43 @@ target triple = "x86_64-unknown-linux-gnu"
 ; Function Attrs: noinline nounwind uwtable
 define dso_local i32 @main() #0 {
 entry:
-  %retval = alloca i32, align 4
-  %i = alloca i32, align 4
   %A = alloca [40 x i32], align 16
   %C = alloca [40 x i32], align 16
   %D = alloca [40 x i32], align 16
-  store i32 0, ptr %retval, align 4
-  store i32 2, ptr %i, align 4
-  br label %for.cond
+  br label %for.body
 
-for.cond:                                         ; preds = %for.inc, %entry
-  %0 = load i32, ptr %i, align 4
-  %cmp = icmp slt i32 %0, 20
-  br i1 %cmp, label %for.body, label %for.end
-
-for.body:                                         ; preds = %for.cond
-  %1 = load i32, ptr %i, align 4
-  %idxprom = sext i32 %1 to i64
+for.body:                                         ; preds = %entry, %for.inc
+  %i.01 = phi i32 [ 2, %entry ], [ %inc, %for.inc ]
+  %idxprom = sext i32 %i.01 to i64
   %arrayidx = getelementptr inbounds [40 x i32], ptr %C, i64 0, i64 %idxprom
-  %2 = load i32, ptr %arrayidx, align 4
-  %3 = load i32, ptr %i, align 4
-  %idxprom1 = sext i32 %3 to i64
+  %0 = load i32, ptr %arrayidx, align 4
+  %idxprom1 = sext i32 %i.01 to i64
   %arrayidx2 = getelementptr inbounds [40 x i32], ptr %A, i64 0, i64 %idxprom1
-  store i32 %2, ptr %arrayidx2, align 4
-  %4 = load i32, ptr %i, align 4
-  %mul = mul nsw i32 3, %4
+  store i32 %0, ptr %arrayidx2, align 4
+  %mul = mul nsw i32 3, %i.01
   %sub = sub nsw i32 %mul, 4
   %idxprom3 = sext i32 %sub to i64
   %arrayidx4 = getelementptr inbounds [40 x i32], ptr %A, i64 0, i64 %idxprom3
-  %5 = load i32, ptr %arrayidx4, align 4
-  %6 = load i32, ptr %i, align 4
-  %idxprom5 = sext i32 %6 to i64
+  %1 = load i32, ptr %arrayidx4, align 4
+  %idxprom5 = sext i32 %i.01 to i64
   %arrayidx6 = getelementptr inbounds [40 x i32], ptr %D, i64 0, i64 %idxprom5
-  store i32 %5, ptr %arrayidx6, align 4
-  %7 = load i32, ptr %i, align 4
-  %mul7 = mul nsw i32 2, %7
+  store i32 %1, ptr %arrayidx6, align 4
+  %mul7 = mul nsw i32 2, %i.01
   %idxprom8 = sext i32 %mul7 to i64
   %arrayidx9 = getelementptr inbounds [40 x i32], ptr %C, i64 0, i64 %idxprom8
-  %8 = load i32, ptr %arrayidx9, align 4
-  %9 = load i32, ptr %i, align 4
-  %sub10 = sub nsw i32 %9, 1
+  %2 = load i32, ptr %arrayidx9, align 4
+  %sub10 = sub nsw i32 %i.01, 1
   %idxprom11 = sext i32 %sub10 to i64
   %arrayidx12 = getelementptr inbounds [40 x i32], ptr %D, i64 0, i64 %idxprom11
-  store i32 %8, ptr %arrayidx12, align 4
+  store i32 %2, ptr %arrayidx12, align 4
   br label %for.inc
 
 for.inc:                                          ; preds = %for.body
-  %10 = load i32, ptr %i, align 4
-  %inc = add nsw i32 %10, 1
-  store i32 %inc, ptr %i, align 4
-  br label %for.cond, !llvm.loop !6
+  %inc = add nsw i32 %i.01, 1
+  %cmp = icmp slt i32 %inc, 20
+  br i1 %cmp, label %for.body, label %for.end, !llvm.loop !6
 
-for.end:                                          ; preds = %for.cond
+for.end:                                          ; preds = %for.inc
   ret i32 0
 }
 
