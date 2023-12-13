@@ -11,6 +11,7 @@ struct HW1Pass : public PassInfoMixin<HW1Pass> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM);
 };
 
+//transform the value class to string
 std::string get_str(Value* val)
 {
   std::string str;
@@ -22,17 +23,16 @@ std::string get_str(const char *val)
 {
   std::string str;
   str= val;
-  //errs()<<str<<"\n";
   return str;
 }
 
+//resolving the eqution from the structure given
 void get_equ(int* a, int* c, std::string equ)
 {
   if(equ=="i")
   {
     *a=1;
     *c=0;
-    // errs()<<*a<<*c<<"\n";
   }
   else if(equ[1]=='+')
   {
@@ -43,7 +43,6 @@ void get_equ(int* a, int* c, std::string equ)
   {
     *a=1;
     *c=-1*stoi(equ.substr(2,equ.length()));
-    // errs()<<*a<<*c<<"\n";
   }
   else if(equ[1]=='*')
   {
@@ -67,6 +66,7 @@ void get_equ(int* a, int* c, std::string equ)
   }
 }
 
+//getting the gcd, and u, v
 int xGCD(int a, int b, int &x, int &y) {
     if(b == 0) {
        x = 1;
@@ -79,6 +79,8 @@ int xGCD(int a, int b, int &x, int &y) {
     y = x1 - (a / b) * y1;
     return gcd;
 }
+
+//geting the bounds of t which is intermediate of diophantine
 void get_b(double &l_x,double &u_x, double &l_y, double &u_y,double &L,double &U)
 {
   double ar[]={l_x,l_y,u_x,u_y};
@@ -102,6 +104,8 @@ void get_b(double &l_x,double &u_x, double &l_y, double &u_y,double &L,double &U
     U=floor(ar[2]);
   }
 }
+
+//diophantine fuction
 std::vector<int*> diophantine(int low_b,int up_b,std::string equ_a, std::string equ_b)
 {
   int u,v;
@@ -155,7 +159,7 @@ bool greater(int* s,int* t)
   return s[0]<t[0];
 }
 
-
+//the struct to store the info of instructions
 using ar_name=std::string;
 using idx=std::string;
 struct S
@@ -169,17 +173,12 @@ struct S
 };
 
 PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM) 
-{
-
-  //get the block of forloop 
+{ 
   BasicBlock *entry_block;
   BasicBlock *for_body_block; 
   BasicBlock *for_inc_block;
 
-  
-  
   //get the iteration of loop
-
   auto &LI = FAM.getResult<LoopAnalysis>(F);
   auto &SE =FAM.getResult<ScalarEvolutionAnalysis>(F);
   int iteration_begin=0;
@@ -200,6 +199,8 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       iteration_stripe = TI->getSExtValue();
     }
   }
+
+  //find the body block and inc block
   for (const auto &L : LI) {
         for (llvm::Loop::block_iterator BB = L->block_begin(); BB != L->block_end(); ++BB) {
           llvm::BasicBlock *BBinLoop = *BB;
@@ -215,11 +216,11 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       }
   }
 
-  //seperate S1,S2,...
-  
+  //seperate S1,S2,..., and store them into the struct
   std::vector<S> s;
   int S_num=0;
   
+  //initialize the structure
   for(BasicBlock::iterator I = for_body_block->begin(), be = for_body_block->end(); I != be; I++)
   {
     Instruction &rI=*I;
@@ -229,6 +230,8 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       S_num++;
     }
   }
+
+  //the process of getting the array name of each instruction
   int i=0;
   for(BasicBlock::iterator I = for_body_block->begin(), be = for_body_block->end(); I != be && i<S_num; I++)
   {
@@ -246,6 +249,8 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       ++i;
     }
   }
+
+  //the process of getting the idx
   i=0;
   std::string equ="i";
   for(BasicBlock::iterator I = for_body_block->begin(), be = for_body_block->end(); I != be; I++)
@@ -290,13 +295,15 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       equ="i";  
     }
   }
-    
+
+  //running the diophantine func, getting the result of the dependency, and stroe them
+  //into the string.
   std::string flow_dependence="====Flow Dependency====\n";
   std::string anti_dependence="====Anti-Dependency====\n";
   std::string output_dependence="====Output Dependency====\n";
   std::vector<int*> result;
 
-  //left to right
+  //part 1,left to right
   for(int i=0;i<S_num;i++)
   {
     for(int j=i;j<S_num && j<i+3;j++)
@@ -322,7 +329,7 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     }
   }
   
-  //right to left
+  //part 2,right to left
   for(int i=0;i<S_num;i++)
   {
     for(int j=i+1;j<S_num && j<i+3;j++)
@@ -348,7 +355,7 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
     }
   }
 
-  //left to left
+  //part 3,left to left
   for(int i=0;i<S_num;i++)
   {
     for(int j=i+1;j<S_num && j<i+3;j++)
@@ -373,6 +380,7 @@ PreservedAnalyses HW1Pass::run(Function &F, FunctionAnalysisManager &FAM)
       }
     }
   }
+  // output the result
   errs()<<flow_dependence;
   errs()<<anti_dependence;
   errs()<<output_dependence;
