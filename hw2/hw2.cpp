@@ -343,16 +343,76 @@ class TEQUIV_set
   public:
     std::map<std::string,std::string*> T;
     std::vector<std::string> list;
+    std::set<std::pair<std::string,std::string>> relation;
     void initialize(std::string a)
     {
       list.push_back(a);
       std::string *i= new std::string[2];
       T[a]=i;
+      T[a][0]="";
+      T[a][1]="";
     }
     
-    
+    void show_list()
+    {
+      for(auto i:list)
+      {
+        errs()<<i<<"\n";
+      }
+    }
+    bool check_in_list(std::string b)
+    {
+      for(auto i:list)
+      {
+        if(i==b)
+        {
+          return true;
+        }
+      }
+      return false;
+    }
+    void add(var_collection_equiv a)
+    {
+      if(check_in_list(a.first.name) )
+      {
+        if(relation.empty())
+        {
+          T[a.first.name][a.first.pt_level]=a.second.name;
+        }
+        else
+        {
+          for(auto i:relation)
+          {
+            if(a.first.name == i.first || a.first.name == i.second)
+            {
+              T[i.first][1]=a.second.name;
+              T[i.second][0]=a.second.name;
+            }
+          }
+        }
+      }
+      if(check_in_list(a.first.name) && check_in_list(a.second.name))
+      {
+        relation.emplace(a.first.name,a.second.name);
+        T[a.first.name][1]=T[a.second.name][0];
+      }
+    }
 };
 ////////////////////////////////////////////// OverLoad ///////////////////////////////////////////////////////////////////////////////////
+bool operator<(const std::pair<std::string,std::string> a, const std::pair<std::string,std::string> b)
+{
+  if(a.first == b.first && a.second==b.second)
+  {
+    return false;
+  }
+  else if(a.first == b.second && a.second==b.first)
+  {
+    return false;
+  }
+  else{
+    return true;
+  }
+}
 bool operator==(const Var a,const Var b)
 {
   return (a.name == b.name && a.pt_level == b.pt_level);
@@ -470,7 +530,28 @@ PreservedAnalyses HW2Pass::run(Function &F, FunctionAnalysisManager &FAM)
     }
   }  
   S.reserve(S_num);
- ////////////////////// Handling Statement : Self_Self_TREF ///////////////////////////////////////////////////////////////////////////////////
+////////////////////// Get the list of Variable /////////////////////////////////////////////////////////////////////////
+
+  std::string ptr="";
+  for(BasicBlock::iterator I = entry_block->begin(), be = entry_block->end(); I != be; I++)
+  {
+    std::string str;
+    llvm::raw_string_ostream Inst(str);
+    Inst << *I;
+    std::string n;
+    bool ptr;
+    auto index_eql=find(Inst.str(),'=');
+    auto index_pe=find(Inst.str(),'%');
+    if(Inst.str().find("alloca")!=-1)
+    {
+      n=Inst.str().substr(Inst.str().find('%')+1,index_eql-index_pe-2);
+      if(Inst.str().find("ptr")!=-1)
+      {
+        TEQUIV.initialize(n);
+      }
+    }
+  }
+////////////////////// Handling Statement : Self_Self_TREF ///////////////////////////////////////////////////////////////////////////////////
   
   BasicBlock::iterator a = entry_block->begin();
   BasicBlock::iterator b;
@@ -521,19 +602,18 @@ PreservedAnalyses HW2Pass::run(Function &F, FunctionAnalysisManager &FAM)
   }
 /////////////////// Managing TEQUIV //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // for(auto i:S)
-  // {
+  for(auto i:S)
+  {
   //   errs()<<"======TGEN======: \n";
   //   i.show_self_TGEN(); 
   //   errs()<<"======TREf======: \n";
   //   i.show_self_TREF();
   //   errs()<<"======TDEF======: \n";
   //   i.show_self_TDEF();
-  //   errs()<<"======TEQUIV======: \n";
-  //   i.show_self_TEQUIV();
-  //   errs()<<"====================\n\n";
-  // }
-  TEQUIV.initialize("b");
+    // errs()<<"======TEQUIV======: \n";
+    // i.show_self_TEQUIV();
+    // errs()<<"====================\n\n";
+  }
   
 
   return PreservedAnalyses::all();
