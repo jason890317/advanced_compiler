@@ -7,7 +7,7 @@ IRFLAGS=-Xclang -disable-O0-optnone -fno-discard-value-names -S -emit-llvm
 OPT=`$(LLVM_CONFIG) --bindir`/opt
 
 ll:=test1 test2 test3 test4
-target:=test4.ll
+target:=test2.ll
 
 
 .PHONY: all test run clean 
